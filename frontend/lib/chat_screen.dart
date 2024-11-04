@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart'; // Import the API service
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -8,15 +9,31 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final List<Message> messages = [];
   final TextEditingController _controller = TextEditingController();
+  final ApiService apiService = ApiService(
+      baseUrl: 'http://127.0.0.1:8000'); // Change the base URL if needed
 
-  void _sendMessage() {
+  void _sendMessage() async {
     if (_controller.text.isNotEmpty) {
       setState(() {
         messages.add(Message(text: _controller.text, isUser: true));
-        messages.add(
-            Message(text: "This is a response from ChatGPT.", isUser: false));
-        _controller.clear();
       });
+
+      // Call the API to get the response
+      try {
+        String? responseMessage =
+            await apiService.sendMessage(_controller.text);
+        if (responseMessage != null) {
+          setState(() {
+            messages.add(Message(text: responseMessage, isUser: false));
+          });
+        }
+      } catch (e) {
+        setState(() {
+          messages.add(Message(text: 'Error: ${e.toString()}', isUser: false));
+        });
+      }
+
+      _controller.clear();
     }
   }
 
