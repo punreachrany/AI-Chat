@@ -7,33 +7,52 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final List<Message> messages = [];
-  final TextEditingController _controller = TextEditingController();
+  final List<Message> messages = []; // List to store messages
+  final TextEditingController _controller =
+      TextEditingController(); // Controller for the input field
   final ApiService apiService = ApiService(
       baseUrl: 'http://127.0.0.1:8000'); // Change the base URL if needed
 
+  bool isLoading = false; // Variable to track loading state
+
   void _sendMessage() async {
     if (_controller.text.isNotEmpty) {
+      // Step 1: Show the user's message on the screen
+      String userMessage = _controller.text;
       setState(() {
-        messages.add(Message(text: _controller.text, isUser: true));
+        messages.add(Message(
+            text: userMessage,
+            isUser: true)); // Add user message to the messages list
+        isLoading = true; // Set loading state to true
       });
 
-      // Call the API to get the response
+      // Step 2: Clear the input field immediately after adding the message
+      _controller.clear();
+
+      // Step 3: Call the API to get the response
       try {
-        String? responseMessage =
-            await apiService.sendMessage(_controller.text);
+        String? responseMessage = await apiService.sendMessage(userMessage);
         if (responseMessage != null) {
+          // If the response is not null, add it to the messages list
           setState(() {
-            messages.add(Message(text: responseMessage, isUser: false));
+            messages.add(Message(
+                text: responseMessage,
+                isUser: false)); // Add bot response to the messages list
           });
         }
       } catch (e) {
+        // Handle any errors that occur during the API call
         setState(() {
-          messages.add(Message(text: 'Error: ${e.toString()}', isUser: false));
+          messages.add(Message(
+              text: 'Error: ${e.toString()}',
+              isUser: false)); // Add error message to the messages list
+        });
+      } finally {
+        // Reset the loading state after the API call is complete
+        setState(() {
+          isLoading = false; // Set loading state to false
         });
       }
-
-      _controller.clear();
     }
   }
 
@@ -41,7 +60,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('ChatGPT'),
+        title: Text('AI Chat'),
       ),
       body: Column(
         children: [
@@ -49,16 +68,22 @@ class _ChatScreenState extends State<ChatScreen> {
             child: ListView.builder(
               itemCount: messages.length,
               itemBuilder: (context, index) {
-                return _buildMessage(messages[index]);
+                return _buildMessage(messages[index]); // Build message bubbles
               },
             ),
           ),
-          _buildInputField(),
+          if (isLoading) // Show loading indicator if loading
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          _buildInputField(), // Input field at the bottom
         ],
       ),
     );
   }
 
+  // Method to build message bubbles
   Widget _buildMessage(Message message) {
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -77,6 +102,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  // Method to build input field
   Widget _buildInputField() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -95,7 +121,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           IconButton(
             icon: Icon(Icons.send),
-            onPressed: _sendMessage,
+            onPressed: _sendMessage, // Call send message when button is pressed
           ),
         ],
       ),
@@ -103,9 +129,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
+// Class to represent a message
 class Message {
-  final String text;
-  final bool isUser;
+  final String text; // Message text
+  final bool isUser; // Flag to indicate if the message is from the user
 
   Message({required this.text, required this.isUser});
 }

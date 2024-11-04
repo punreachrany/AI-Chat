@@ -15,7 +15,7 @@ class ChatView(APIView):
             # Call the LLaMA model with the user's message
             stream = ollama.chat(
                 model='llama3.2',  # Use the appropriate model name
-                messages=[{'role': 'user', 'content': user_message}],
+                messages=[{'role': 'user', 'content': user_message + " Reply like human"}],
                 stream=True,
             )
 
